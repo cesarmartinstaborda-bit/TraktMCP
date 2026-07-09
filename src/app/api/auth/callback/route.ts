@@ -2,19 +2,10 @@
 // Two modes:
 // 1. MCP client flow: relay code + state back to the MCP client's redirect_uri
 // 2. Manual flow (from landing page): exchange code for token and show it
+import { getBaseUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
 
 const TRAKT_API = "https://api.trakt.tv";
-
-function getBaseUrl(): string {
-  if (process.env["VERCEL_PROJECT_PRODUCTION_URL"]) {
-    return `https://${process.env["VERCEL_PROJECT_PRODUCTION_URL"]}`;
-  }
-  if (process.env["NEXT_PUBLIC_BASE_URL"]) {
-    return process.env["NEXT_PUBLIC_BASE_URL"];
-  }
-  return "http://localhost:3000";
-}
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const { searchParams } = new URL(req.url);
@@ -34,14 +25,17 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         if (relayState.redirect_uri) {
           const dest = new URL(relayState.redirect_uri);
           dest.searchParams.set("error", error);
-          if (relayState.state) dest.searchParams.set("state", relayState.state);
+          if (relayState.state)
+            dest.searchParams.set("state", relayState.state);
           return NextResponse.redirect(dest.toString());
         }
       } catch {
         // Fall through to landing page error
       }
     }
-    return NextResponse.redirect(`${baseUrl}/?error=${encodeURIComponent(error)}`);
+    return NextResponse.redirect(
+      `${baseUrl}/?error=${encodeURIComponent(error)}`,
+    );
   }
 
   if (!code) {
@@ -82,7 +76,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const clientSecret = process.env["TRAKT_CLIENT_SECRET"];
 
   if (!clientId || !clientSecret) {
-    return NextResponse.redirect(`${baseUrl}/?error=server_configuration_error`);
+    return NextResponse.redirect(
+      `${baseUrl}/?error=server_configuration_error`,
+    );
   }
 
   try {
@@ -111,7 +107,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     };
 
     return NextResponse.redirect(
-      `${baseUrl}/?access_token=${encodeURIComponent(tokenData.access_token)}`
+      `${baseUrl}/?access_token=${encodeURIComponent(tokenData.access_token)}`,
     );
   } catch (err) {
     console.error("OAuth callback error:", err);

@@ -1,17 +1,8 @@
 // OAuth authorize endpoint
 // Redirects MCP clients to Trakt's authorization page
 // After Trakt auth, user is redirected back to /api/auth/callback
+import { getBaseUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
-
-function getBaseUrl(): string {
-  if (process.env["VERCEL_PROJECT_PRODUCTION_URL"]) {
-    return `https://${process.env["VERCEL_PROJECT_PRODUCTION_URL"]}`;
-  }
-  if (process.env["NEXT_PUBLIC_BASE_URL"]) {
-    return process.env["NEXT_PUBLIC_BASE_URL"];
-  }
-  return "http://localhost:3000";
-}
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const { searchParams } = new URL(req.url);

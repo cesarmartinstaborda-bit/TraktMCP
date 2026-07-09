@@ -1,6 +1,7 @@
 // OAuth Authorization Server metadata endpoint (RFC 8414)
 // Required by MCP clients to discover how to initiate the OAuth flow
 // This server acts as an AS that wraps Trakt's OAuth
+import { getBaseUrl } from "@/lib/utils";
 import { NextResponse } from "next/server";
 
 const CORS_HEADERS = {
@@ -8,16 +9,6 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "GET, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
-
-function getBaseUrl(): string {
-  if (process.env["VERCEL_PROJECT_PRODUCTION_URL"]) {
-    return `https://${process.env["VERCEL_PROJECT_PRODUCTION_URL"]}`;
-  }
-  if (process.env["NEXT_PUBLIC_BASE_URL"]) {
-    return process.env["NEXT_PUBLIC_BASE_URL"];
-  }
-  return "http://localhost:3000";
-}
 
 export async function GET(): Promise<NextResponse> {
   const baseUrl = getBaseUrl();

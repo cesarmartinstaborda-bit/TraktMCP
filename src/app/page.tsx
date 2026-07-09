@@ -1,3 +1,5 @@
+import { getBaseUrl } from "@/lib/utils";
+
 const PUBLIC_TOOLS = [
   "trakt_search",
   "trakt_lookup",
@@ -36,17 +38,7 @@ const AUTH_TOOLS = [
   "trakt_get_recommendations",
 ];
 
-const HOSTED_MCP_URL = "http://trakt-mcp.lorenzo0111.me/api/mcp";
-
-function getBaseUrl(): string {
-  if (process.env["VERCEL_PROJECT_PRODUCTION_URL"]) {
-    return `https://${process.env["VERCEL_PROJECT_PRODUCTION_URL"]}`;
-  }
-  if (process.env["NEXT_PUBLIC_BASE_URL"]) {
-    return process.env["NEXT_PUBLIC_BASE_URL"];
-  }
-  return "http://localhost:3000";
-}
+const HOSTED_MCP_URL = "https://trakt-mcp.lorenzo0111.me/api/mcp";
 
 interface PageProps {
   searchParams: Promise<{ access_token?: string; error?: string }>;
