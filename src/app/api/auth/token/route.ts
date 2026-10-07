@@ -1,6 +1,7 @@
 // OAuth token endpoint
 // Proxies token exchange and refresh requests to Trakt's OAuth token endpoint
 // MCP clients POST here with code + code_verifier to get an access token
+import { unpackCode, verifierFromNonce } from "@/lib/pkce";
 import { getBaseUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
 
@@ -51,8 +52,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const baseUrl = getBaseUrl();
 
   if (grantType === "authorization_code") {
-    const code = body["code"];
-    if (!code) {
+    const rawCode = body["code"];
+    if (!rawCode) {
       return NextResponse.json(
         {
           error: "invalid_request",
@@ -62,8 +63,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Exchange the code for a Trakt access token
-    // Trakt doesn't support PKCE natively, so we just proxy the code exchange
+    const { code, nonce } = unpackCode(rawCode);
+
+    // Trakt requires PKCE for this client. The two PKCE legs are independent:
+    // body["code_verifier"] belongs to the MCP client -> this server leg and
+    // must NOT be forwarded to Trakt.
     const traktResponse = await fetch(TRAKT_TOKEN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -73,6 +77,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         client_secret: clientSecret,
         redirect_uri: `${baseUrl}/api/auth/callback`,
         grant_type: "authorization_code",
+        ...(nonce ? { code_verifier: verifierFromNonce(nonce) } : {}),
       }),
     });
 
