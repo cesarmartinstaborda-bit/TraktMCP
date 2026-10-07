@@ -2,6 +2,7 @@
 // Two modes:
 // 1. MCP client flow: relay code + state back to the MCP client's redirect_uri
 // 2. Manual flow (from landing page): exchange code for token and show it
+import { packCode, verifierFromNonce } from "@/lib/pkce";
 import { getBaseUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
 
@@ -48,6 +49,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     state?: string;
     code_challenge?: string;
     code_challenge_method?: string;
+    nonce?: string;
   };
 
   let relayState: RelayState | null = null;
@@ -65,7 +67,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   // The MCP client will exchange the code using the token endpoint.
   if (relayState?.redirect_uri) {
     const dest = new URL(relayState.redirect_uri);
-    dest.searchParams.set("code", code);
+    dest.searchParams.set(
+      "code",
+      relayState.nonce ? packCode(code, relayState.nonce) : code,
+    );
     if (relayState.state) dest.searchParams.set("state", relayState.state);
     return NextResponse.redirect(dest.toString());
   }
@@ -91,6 +96,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         client_secret: clientSecret,
         redirect_uri: `${baseUrl}/api/auth/callback`,
         grant_type: "authorization_code",
+        ...(relayState?.nonce
+          ? { code_verifier: verifierFromNonce(relayState.nonce) }
+          : {}),
       }),
     });
 
